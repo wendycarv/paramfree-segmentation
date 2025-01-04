@@ -18,7 +18,7 @@ def plot_with_slider_1D(data, time, tf_data):
 
     # Plot each array in `data`
     for d in range(len(data)):
-        ax.plot(range(len(data[d])), data[d], label=f'{labels[d]}', color=colors[d], alpha=1)
+        ax.plot(range(len(data[d])), data[d], label=f'{labels[d]}', color=colors[d], alpha=0.5)
         idx_marker, = ax.plot([cur_idx], [data[d][cur_idx]], '.', ms=9, color=colors[d], label=f'{labels[d]}')
         idxs.append(idx_marker)
 
@@ -31,10 +31,11 @@ def plot_with_slider_1D(data, time, tf_data):
 
     # Plot the time-transformed data
     for d in range(3):
-        ax2.plot(time, tf_data[1][:, d], color=colors[d], alpha=0.5)
+        ax2.plot(time, tf_data[1][:, d], color=colors[d], alpha=0)
 
     ax2.set_xlabel('time')
-
+    time_ticks = np.linspace(time[0], time[-1], 10)
+    ax2.set_xticks(time_ticks)
     # Time slider
     axtime = plt.axes([0.25, 0.05, 0.65, 0.03])
     time_slider = Slider(axtime, 'time', time[0], time[-1], valinit=cur_idx, valfmt='%0.2f')
@@ -65,7 +66,7 @@ def plot_with_slider_1D(data, time, tf_data):
 
     ax.legend()
     ax.set_xlabel('index')
-    #plt.grid()
+    ax.grid(True, linestyle='--', color='gray', alpha=0.5)
     plt.show()
 
 
