@@ -19,12 +19,12 @@ def plot_with_slider_1D(data, time, tf_data):
     # Plot each array in `data`
     for d in range(len(data)):
         ax.plot(range(len(data[d])), data[d], label=f'{labels[d]}', color=colors[d], alpha=0.5)
-        idx_marker, = ax.plot([cur_idx], [data[d][cur_idx]], '.', ms=9, color=colors[d], label=f'{labels[d]} marker')
-        idxs.append(idx_marker)
+        #idx_marker, = ax.plot([cur_idx], [data[d][cur_idx]], '.', ms=9, color=colors[d], label=f'{labels[d]} marker')
+        #idxs.append(idx_marker)
 
     # Slider to select index
-    axidx = plt.axes([0.25, 0.10, 0.65, 0.03])
-    idx_slider = Slider(axidx, 'index', 0, len(data[0]) - 1, valinit=cur_idx, valfmt='%0.0f')
+    #axidx = plt.axes([0.25, 0.10, 0.65, 0.03])
+    #idx_slider = Slider(axidx, 'index', 0, len(data[0]) - 1, valinit=cur_idx, valfmt='%0.0f')
 
     # Secondary x-axis for time
     ax2 = ax.twiny()
@@ -37,11 +37,12 @@ def plot_with_slider_1D(data, time, tf_data):
     time_ticks = np.linspace(time[0], time[-1], 10)
     ax2.set_xticks(time_ticks)
     # Time slider
-    axtime = plt.axes([0.25, 0.05, 0.65, 0.03])
-    time_slider = Slider(axtime, 'time', time[0], time[-1], valinit=cur_idx, valfmt='%0.2f')
+    #axtime = plt.axes([0.25, 0.05, 0.65, 0.03])
+    #time_slider = Slider(axtime, 'time', time[0], time[-1], valinit=cur_idx, valfmt='%0.2f')
 
+    """
     def update(val):
-        """Update markers and synchronize the sliders."""
+        #Update markers and synchronize the sliders.
         nonlocal cur_idx
         cur_idx = int(idx_slider.val)
         for d in range(len(data)):
@@ -51,7 +52,7 @@ def plot_with_slider_1D(data, time, tf_data):
         time_slider.set_val(time[cur_idx])
 
     def update_time(val):
-        """Update markers and synchronize the index slider."""
+        #Update markers and synchronize the index slider.
         nonlocal cur_idx
         cur_time = val
         cur_idx = np.argmin(np.abs(time - cur_time))  # Find closest index to the time value
@@ -63,15 +64,24 @@ def plot_with_slider_1D(data, time, tf_data):
 
     idx_slider.on_changed(update)
     time_slider.on_changed(update_time)
-
+    """
     ax.legend()
     ax.set_xlabel('index')
-    ax.grid(True, linestyle='--', color='gray', alpha=0.5)
+    ax.grid(True, linestyle='-', color='white', alpha=0.5)
+    '''
+    # video 1
+    ax.axvline(0, color="purple", alpha=1, linestyle="--", label="plate")
+    ax.axvline(1125, color="teal", alpha=1, linestyle="--", label="napkin")
+    ax.axvline(2591, color="navy", alpha=1, linestyle="--", label="cup")
+    ax.axvline(3986, color="orange", alpha=1, linestyle="--", label="fork")
+    ax.axvline(5666, color="skyblue", alpha=1, linestyle="--", label="spoon")
+    '''
+    # 4
     ax.axvline(0, color="purple", alpha=1, linestyle="--", label="plate")
     ax.axvline(1898, color="teal", alpha=1, linestyle="--", label="napkin")
-    ax.axvline(4081, color="gray", alpha=1, linestyle="--", label="cup")
+    ax.axvline(4081, color="navy", alpha=1, linestyle="--", label="cup")
     ax.axvline(5442, color="orange", alpha=1, linestyle="--", label="fork")
-    ax.axvline(6829, color="green", alpha=1, linestyle="--", label="spoon")
+    ax.axvline(6829, color="skyblue", alpha=1, linestyle="--", label="spoon")
 
     '''
     # subtask labels beneath the plot
@@ -81,8 +91,9 @@ def plot_with_slider_1D(data, time, tf_data):
     ax.text(5442, -0.2, "fork", transform=ax.get_xaxis_transform(), ha="center", fontsize=10, color="blue")
     ax.text(6829, -0.2, "spoon", transform=ax.get_xaxis_transform(), ha="center", fontsize=10, color="blue")
     '''
-
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, fontsize=7, ncol=6)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, fontsize=7, ncol=8)
+    ax.set_facecolor("#E5E5E5")
+    plt.style.use("ggplot")
     plt.show()
 
 
@@ -145,6 +156,8 @@ def read_data(fname):
     return joint_data, tf_data, gripper_data
 
 if __name__ == '__main__':
+    # 1: fetch_recorded_demo_1730997119.h5
+    # 4: fetch_recorded_demo_1730997956.h5
     path = '/Users/wendy/Desktop/school/uml/robotics/fetch_table_demos/xyz data/full_tasks/fetch_recorded_demo_1730997956.txt'
     h5_path = '/Users/wendy/Desktop/school/uml/robotics/fetch_table_demos/h5 files/fetch_recorded_demo_1730997956.h5'
     data = np.loadtxt(path)  # load the file into an array
