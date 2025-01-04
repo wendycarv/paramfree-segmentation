@@ -19,11 +19,11 @@ def plot_with_slider_1D(data, time, tf_data):
     # Plot each array in `data`
     for d in range(len(data)):
         ax.plot(range(len(data[d])), data[d], label=f'{labels[d]}', color=colors[d], alpha=0.5)
-        idx_marker, = ax.plot([cur_idx], [data[d][cur_idx]], '.', ms=9, color=colors[d], label=f'{labels[d]}')
+        idx_marker, = ax.plot([cur_idx], [data[d][cur_idx]], '.', ms=9, color=colors[d], label=f'{labels[d]} marker')
         idxs.append(idx_marker)
 
     # Slider to select index
-    axidx = plt.axes([0.25, 0.15, 0.65, 0.03])
+    axidx = plt.axes([0.25, 0.10, 0.65, 0.03])
     idx_slider = Slider(axidx, 'index', 0, len(data[0]) - 1, valinit=cur_idx, valfmt='%0.0f')
 
     # Secondary x-axis for time
@@ -67,6 +67,22 @@ def plot_with_slider_1D(data, time, tf_data):
     ax.legend()
     ax.set_xlabel('index')
     ax.grid(True, linestyle='--', color='gray', alpha=0.5)
+    ax.axvline(0, color="purple", alpha=1, linestyle="--", label="plate")
+    ax.axvline(1898, color="teal", alpha=1, linestyle="--", label="napkin")
+    ax.axvline(4081, color="gray", alpha=1, linestyle="--", label="cup")
+    ax.axvline(5442, color="orange", alpha=1, linestyle="--", label="fork")
+    ax.axvline(6829, color="green", alpha=1, linestyle="--", label="spoon")
+
+    '''
+    # subtask labels beneath the plot
+    ax.text(0, -0.2, "plate", transform=ax.get_xaxis_transform(), ha="center", fontsize=10, color="blue")
+    ax.text(1898, -0.2, "napkin", transform=ax.get_xaxis_transform(), ha="center", fontsize=10, color="blue")
+    ax.text(4081, -0.2, "cup", transform=ax.get_xaxis_transform(), ha="center", fontsize=10, color="blue")
+    ax.text(5442, -0.2, "fork", transform=ax.get_xaxis_transform(), ha="center", fontsize=10, color="blue")
+    ax.text(6829, -0.2, "spoon", transform=ax.get_xaxis_transform(), ha="center", fontsize=10, color="blue")
+    '''
+
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, fontsize=7, ncol=6)
     plt.show()
 
 
@@ -148,8 +164,9 @@ if __name__ == '__main__':
     #traj = np.hstack((x, y, z))
     traj = data
     plot_with_slider_1D(traj_list, time, tf_data)
-    plot_with_slider_3D(traj)
+    # plot_with_slider_3D(traj)
 
+    """
     # plot the main task
     plt.plot(time, tf_data[1][:, 0], label="x", color="red", alpha=0.5)
     plt.plot(time, tf_data[1][:, 1], label="y", color="blue", alpha=0.5)
@@ -158,7 +175,6 @@ if __name__ == '__main__':
     plt.xlabel("time")
     plt.ylabel("position")
 
-    '''
     # Highlight the matching segment
     matching_time_steps = np.arange(start_idx, start_idx + subtask.shape[1])
     plt.plot(matching_time_steps, matching_segment[0, :], label="Matching Segment - X", color="red")
@@ -168,9 +184,9 @@ if __name__ == '__main__':
     # Add vertical lines for the subtask boundaries
     plt.axvline(start_idx, color="black", linestyle="--", label="Subtask Start")
     #plt.axvline(end_idx, color="gray", linestyle="--", label="Subtask End")
-    '''
-
+    
     plt.title("Ground truth for fetch task")
     plt.legend()
     # plt.grid()
     plt.show()
+    """
