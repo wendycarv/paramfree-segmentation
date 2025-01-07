@@ -6,76 +6,6 @@ import glob
 from hmmlearn.hmm import GaussianHMM
 from scipy.stats import poisson, norm
 
-# TODO: UNDERSTAND, implement GPs
-class GP_HSMM:
-    def __init__(self, num_states, duration_distributions, gp_emissions, transition_matrix):
-        """
-        :param num_states: # of HSMM states (subtasks)
-        :param duration_distributions: list of duration distributions for each state
-        :param gp_emissions: list of trained GP models (one for each task)
-        :param transition_matrix: state transition probabilities
-        """
-        self.num_states = num_states
-        self.duration_distributions = duration_distributions
-        self.gp_emissions = gp_emissions
-        self.transition_matrix = transition_matrix
-
-    def forward_filtering(self, observations):
-        """
-        compute likelihoods of each state at each time step
-        :param observations:
-        :return:
-        """
-        num_timesteps = len(observations)
-        alpha = np.zeros((num_timesteps, self.num_states))
-
-        # initialize the first step
-        for state in range(self.num_states):
-            emission_prob = self.compute_emission_prob(state, observations[0])
-            duration_prob = self.duration_distributions[state].pmf(1)  # Duration of 1 timestep
-            alpha[0, state] = emission_prob * duration_prob
-
-        # Recursive calculation
-        for t in range(1, num_timesteps):
-            for state in range(self.num_states):
-                emission_prob = self.compute_emission_prob(state, observations[t])
-                duration_prob = self.duration_distributions[state].pmf(t)  # Adjust duration logic as needed
-                alpha[t, state] = np.sum(
-                    alpha[t - 1, :] * self.transition_matrix[:, state]) * emission_prob * duration_prob
-
-        return alpha
-
-    def backward_sampling(self, observations, alpha):
-        """
-        perform backward sampling to determine the most likely state sequence.
-        """
-        num_timesteps = len(observations)
-        state_sequence = np.zeros(num_timesteps, dtype=int)
-
-        # start from the last time step
-        state_sequence[-1] = np.argmax(alpha[-1, :])
-
-        # backtrack
-        for t in range(num_timesteps - 2, -1, -1):
-            prev_state = state_sequence[t + 1]
-            state_sequence[t] = np.argmax(alpha[t, :] * self.transition_matrix[:, prev_state])
-
-        # get subtask boundaries
-        boundaries = []
-        for t in range(1, num_timesteps):
-            if state_sequence[t] != state_sequence[t-1]:  # we've found a state change
-                boundaries.append((t-1, t))  # (start, end) of the subtask
-
-        return state_sequence, boundaries
-
-    def compute_emission_prob(self, state, observation):
-        """
-        Compute the likelihood of an observation given a state using the state's GP model.
-        """
-        gp_model = self.gp_emissions[state]
-        mu, sigma = gp_model.predict([observation])
-        return norm.pdf(observation, loc=mu, scale=np.sqrt(sigma))
-
 '''
 # step 1: preprocess data
 # assign truth (y) labels to subtasks which should be easy cause we have a spreadsheet for them (that was created from memory but i think is mostly correct)
@@ -91,14 +21,16 @@ def load_data_from_path(path):
 
         # get all .txt files within subfolder
         subtask_files = glob.glob(os.path.join(folder, '*.txt'))
+
+        if subtask_name not in subtasks_data:
+            subtasks_data[subtask_name] = []
+
         for file in subtask_files:
-            #print(f"Loading {file} for subtask {subtask_name}")
             data = np.loadtxt(file)  # load file into an array
-            #print(data.shape)
-            #subtasks_data[subtask_name].append(data)  # append to subtask dictionary
-            #print(subtasks_data[subtask_name])
+
             if subtask_name in subtasks_data:
-                subtasks_data[subtask_name] = np.vstack((subtasks_data[subtask_name], data))
+                #subtasks_data[subtask_name] = np.vstack((subtasks_data[subtask_name], data))
+                subtasks_data[subtask_name].append(data)  # append to subtask dictionary
             else:
                 subtasks_data[subtask_name] = data
 
@@ -107,7 +39,6 @@ def load_data_from_path(path):
     # search for full task files
     full_tasks_files = glob.glob(os.path.join(path, 'full_tasks', '*.txt'))
     for file in full_tasks_files:
-        #print(f"Loading {file} for full task")
         data = np.loadtxt(file)  # load the file into an array
         full_tasks_data.append(data) # add array to list
 
@@ -154,6 +85,7 @@ if __name__ == '__main__':
     path = '/Users/wendy/Desktop/school/uml/robotics/fetch_table_demos/xyz data/'
     subtasks_data, full_tasks_data = load_data_from_path(path)
 
+    '''
     gp_models = {}
     prev_label = ""
     duration_distribution = {}
@@ -181,6 +113,7 @@ if __name__ == '__main__':
 
     print(f"Duration Distributions: {duration_distribution}")
     print(f"Trained {len(gp_models)} GP models for subtasks: {list(gp_models.keys())}")
+    '''
 
     '''
     # step 3: initialize HSMM
@@ -192,25 +125,60 @@ if __name__ == '__main__':
     for i in range(num_subtasks - 1):
         transition_matrix[i, i + 1] = 1  # subtask i transitions to i + 1
 
-    hsmm = GP_HSMM(num_states=num_subtasks, duration_distributions=duration_distribution, gp_emissions=gp_models, transition_matrix=transition_matrix)
+    # Normalize rows to sum to 1, but skip the last row
+    for i in range(num_subtasks - 1):  # Exclude last row (subtask 5)
+        transition_matrix[i] /= transition_matrix[i].sum()
 
-    '''
-    # step 4: segment and identify subtasks
-    '''
+    transition_matrix[4][4] = 1
+
+    plate_sequences = subtasks_data["1"]
+    napkin_sequences = subtasks_data["2"]
+    cup_sequences = subtasks_data["3"]
+    fork_sequences = subtasks_data["4"]
+    spoon_sequences = subtasks_data["5"]
+
+    all_seq = plate_sequences + napkin_sequences + cup_sequences + fork_sequences + spoon_sequences  # all examples from each subtask
+    one_each_seq = np.concatenate([plate_sequences[0], napkin_sequences[0], cup_sequences[0], spoon_sequences[0]])  # only 1 example from each
+    concat_data = np.vstack(all_seq)
+
+    all_seq_lengths = [len(seq) for seq in all_seq]
+    print(all_seq_lengths)
+    one_seq_lengths = [len(plate_sequences[0]), len(napkin_sequences[0]), len(cup_sequences[0]), len(spoon_sequences[0])]
+    print(one_seq_lengths)
+    
+    # number of hidden states = 5; covariance type (covariance matrix) = diag, full?; trans_mat=transition_matrix* (maybe not needed rn?), n_iter can vary...
+    hmm_model = GaussianHMM(n_components=num_subtasks, covariance_type="diag", n_iter=100, algorithm='viterbi', init_params='c')
+    hmm_model.transmat_ = transition_matrix
+
+    # (X, lengths): concat_data = np.concatenate([plate, napkin, cup, fork, spoon]), lengths = [len(plate), len(napkin),...] (len(task)=# of examples we have for that subtask)
+    print("Training model...")
+    hmm_model.fit(concat_data, all_seq_lengths)
+    print("Finished training model")
+
+    print("Predicting task...")
+    pred_states = hmm_model.predict(full_tasks_data[0])
+    print(pred_states)
+
+    # need to find actual boundaries of these states too
     boundaries = []
-    for task_data in full_tasks_data:
-        print("Processing full task")
-        alpha = hsmm.forward_filtering(task_data)
-        state_sequence, boundaries = hsmm.backward_sampling(task_data, alpha)  # grab boundaries/segmentation here?
-        print("Predicted state sequence: ", state_sequence)
-        print("Subtask boundaries: ", boundaries)
-        '''
-        # step 5: visualize segments using matplot
-        '''
-        visualize_segmentation(task_data, boundaries)
+    # Iterate through the predicted states to find transitions
+    for i in range(1, len(pred_states)):
+        if pred_states[i] != pred_states[i - 1]:
+            boundaries.append(i)
 
-'''
-# step 6: evaluate
-evaluate_segmentation(segmentation, ground_truth)
-'''
+    # Print or use the boundaries
+    print("State boundaries:", boundaries)
 
+    states = []
+    start = 0
+    # Output the subtasks and their boundaries
+    for i in range(len(pred_states) - 1):
+        if pred_states[i] != pred_states[i+1]:
+            end = i
+            states.append((pred_states[start], start, end))
+            start = i + 1
+
+    states.append((pred_states[start], start, len(pred_states) - 1))
+    
+    for state, start, end in states:
+        print(f"Subtask: {state}, Start: {start}, End: {end}")
