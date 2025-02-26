@@ -74,20 +74,12 @@ def accuracy_score(truth, predictions):
 
 
 def return_data(file_path):
-    """
-    Reads smoothed x, y, and t data from an HDF5 file and plots the drawing
-    exactly as it was drawn, preserving stroke continuity and flipping axes correctly.
-
-    Args:
-        file_path (str): The path to the HDF5 file containing the drawing data.
-    """
-
     with h5py.File(file_path, 'r') as hf:
         if "smoothed" not in hf:
             print("No 'smoothed' group found in the file.")
             return
 
-        # Find the overall min/max Y values for proper flipping
+        # need to find min/max values of y for flipping
         all_y_values = []
         for key in hf["smoothed"].keys():
             y_data = np.array(hf[f"smoothed/{key}/y"])
@@ -95,22 +87,20 @@ def return_data(file_path):
         
         y_min, y_max = min(all_y_values), max(all_y_values)
 
-        # Iterate over each stroke stored in the "smoothed" group
-        for key in sorted(hf["smoothed"].keys(), key=int):  # Ensure numerical order
+        # iterate over each stroke
+        for key in sorted(hf["smoothed"].keys(), key=int):
             x_data = np.array(hf[f"smoothed/{key}/x"])
             y_data = np.array(hf[f"smoothed/{key}/y"])
             t_data = np.array(hf[f"smoothed/{key}/t"])
 
-            # Sort stroke points by time (within the stroke)
+            # sort by time
             sorted_indices = np.argsort(t_data)
             x_data = x_data[sorted_indices]
             y_data = y_data[sorted_indices]
 
-            # flip Y correctly by reversing relative to the max Y value
+            # reverse according to max y value
             y_data = y_max - (y_data - y_min)
 
-            # Plot each stroke separately to prevent unwanted connections
-            #plt.plot(x_data, y_data, linewidth=3, color="black")
             return x_data, y_data
 
 
@@ -169,7 +159,11 @@ def main():
     plt.figure(figsize=(8, 7))
     ax1 = plt.subplot(212)
     ax1.set_title('Original')
-    # Find the overall min/max Y values for proper flipping
+
+
+
+    # ***** NEEDS TO BE REORGANIZED, FOR NOW THIS WORKS ***** 
+    # essentially doing same thing as what was done in return_data()
     with h5py.File("/Users/wendy/Desktop/school/uml/robotics/dog/h5 files/dog3.h5", 'r') as hf:
 
         all_y_values = []
@@ -179,27 +173,24 @@ def main():
         
         y_min, y_max = min(all_y_values), max(all_y_values)
 
-        # Iterate over each stroke stored in the "smoothed" group
-        for key in sorted(hf["smoothed"].keys(), key=int):  # Ensure numerical order
+        for key in sorted(hf["smoothed"].keys(), key=int): 
             x_data = np.array(hf[f"smoothed/{key}/x"])
             y_data = np.array(hf[f"smoothed/{key}/y"])
             t_data = np.array(hf[f"smoothed/{key}/t"])
 
-            # Sort stroke points by time (within the stroke)
             sorted_indices = np.argsort(t_data)
             x_data = x_data[sorted_indices]
             y_data = y_data[sorted_indices]
 
-            # flip Y correctly by reversing relative to the max Y value
             y_data = y_max - (y_data - y_min)
 
-            # append the data to full arrays
-            full_x_data.extend(x_data)  # adds values to the list instead of nesting arrays
+            full_x_data.extend(x_data) 
             full_y_data.extend(y_data)
 
-            full_x_data.append(np.nan)  # Add NaN to prevent unwanted connections
+            # adding nan to stop from adding random connections between each letter
+            full_x_data.append(np.nan)
             full_y_data.append(np.nan)
-            # Plot each stroke separately to prevent unwanted connections
+
             ax1.plot(x_data, y_data, linewidth=3, color="black")
 
     ax1.set_xlabel("X-axis")
@@ -210,7 +201,6 @@ def main():
     for file in files:
         ax2 = plt.subplot(2, n_classes, i+1)
         ax2.set_title(f'Class {i+1}')
-         # Find the overall min/max Y values for proper flipping
         with h5py.File(f"/Users/wendy/Desktop/school/uml/robotics/dog/h5 files/{file}.h5", 'r') as hf:
 
             all_y_values = []
@@ -220,21 +210,17 @@ def main():
             
             y_min, y_max = min(all_y_values), max(all_y_values)
 
-            # Iterate over each stroke stored in the "smoothed" group
-            for key in sorted(hf["smoothed"].keys(), key=int):  # Ensure numerical order
+            for key in sorted(hf["smoothed"].keys(), key=int):
                 x_data = np.array(hf[f"smoothed/{key}/x"])
                 y_data = np.array(hf[f"smoothed/{key}/y"])
                 t_data = np.array(hf[f"smoothed/{key}/t"])
 
-                # Sort stroke points by time (within the stroke)
                 sorted_indices = np.argsort(t_data)
                 x_data = x_data[sorted_indices]
                 y_data = y_data[sorted_indices]
 
-                # flip Y correctly by reversing relative to the max Y value
                 y_data = y_max - (y_data - y_min)
 
-                # Plot each stroke separately to prevent unwanted connections
                 ax2.plot(x_data, y_data, linewidth=3, color=colors[i])
 
         i += 1
@@ -247,10 +233,10 @@ def main():
 
     for i in range(n_classes):
         start_idx = predicted_indices[i]
-        end_idx = start_idx + len(classes_xyz[i])  # Limit to the subtask's length
+        end_idx = start_idx + len(classes_xyz[i]) # for subtask length
         print(i, start_idx, end_idx)
         ax1.plot(full_x_data[start_idx:end_idx], full_y_data[start_idx:end_idx], 
-             linewidth=3, color=colors[i], label=f"Class {i+1}")  # Add labels for legend
+             linewidth=3, color=colors[i], label=f"Class {i+1}") 
 
     ax1.set_xlabel("X-axis")
     ax1.set_ylabel("Y-axis")
@@ -267,7 +253,6 @@ def main():
     for file in files:
         ax2 = plt.subplot(2, n_classes, i+1)
         ax2.set_title(f'Class {i+1}')
-         # Find the overall min/max Y values for proper flipping
         with h5py.File(f"/Users/wendy/Desktop/school/uml/robotics/dog/h5 files/{file}.h5", 'r') as hf:
 
             all_y_values = []
@@ -277,21 +262,17 @@ def main():
             
             y_min, y_max = min(all_y_values), max(all_y_values)
 
-            # Iterate over each stroke stored in the "smoothed" group
-            for key in sorted(hf["smoothed"].keys(), key=int):  # Ensure numerical order
+            for key in sorted(hf["smoothed"].keys(), key=int): 
                 x_data = np.array(hf[f"smoothed/{key}/x"])
                 y_data = np.array(hf[f"smoothed/{key}/y"])
                 t_data = np.array(hf[f"smoothed/{key}/t"])
 
-                # Sort stroke points by time (within the stroke)
                 sorted_indices = np.argsort(t_data)
                 x_data = x_data[sorted_indices]
                 y_data = y_data[sorted_indices]
 
-                # flip Y correctly by reversing relative to the max Y value
                 y_data = y_max - (y_data - y_min)
 
-                # Plot each stroke separately to prevent unwanted connections
                 ax2.plot(x_data, y_data, linewidth=3, color=colors[i])
 
         i += 1
